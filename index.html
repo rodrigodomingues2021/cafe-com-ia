@@ -380,34 +380,29 @@
 
     <!-- LÓGICA JAVASCRIPT -->
     <script>
+        // ==== Configuração do Backend (Google Sheets via Apps Script) ====
+        // Cole aqui a URL do Web App publicado (veja google-apps-script/Code.gs)
+        const API_URL = 'COLE_AQUI_A_URL_DO_APPS_SCRIPT';
+
         // Dados de Estado
         let selectedCoffee = null;
         let selectedMood = null;
+        let presenterPollTimer = null;
 
-        const defaultState = {
-            votes: {
-                coffee: { espresso: 6, coado: 9, cappuccino: 7, cha: 2 },
-                mood: { power_user: 8, curious: 11, skeptic: 3 }
-            },
-            questions: [
-                { author: "Marina (Produto)", text: "Qual a melhor forma de começar a usar IA no dia a dia para quem não é dev?", time: "09:12" },
-                { author: "Carlos (Tech)", text: "O Antigravity consegue rodar testes unitários e refatorar funções sozinho?", time: "09:15" },
-                { author: "Anônimo", text: "Como lidar com segurança de dados corporativos ao usar agentes de IA?", time: "09:18" }
-            ]
-        };
-
-        // Carrega estado ou inicializa padrão
-        function getState() {
-            const saved = localStorage.getItem('cafe_ia_state');
-            if (saved) {
-                try { return JSON.parse(saved); } catch(e){}
-            }
-            return defaultState;
+        async function fetchState() {
+            const res = await fetch(API_URL, { method: 'GET' });
+            if (!res.ok) throw new Error('Falha ao buscar dados: ' + res.status);
+            return res.json();
         }
 
-        function saveState(state) {
-            localStorage.setItem('cafe_ia_state', JSON.stringify(state));
-            renderPresenter();
+        async function postEvent(payload) {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error('Falha ao enviar dados: ' + res.status);
+            return res.json();
         }
 
         // Seleção de Café
@@ -429,7 +424,7 @@
         }
 
         // Submissão do Participante
-        function submitCheckin() {
+        async function submitCheckin() {
             if (!selectedCoffee) {
                 alert('Por favor, selecione qual café você está tomando!');
                 return;
@@ -439,25 +434,22 @@
                 return;
             }
 
-            const state = getState();
-            state.votes.coffee[selectedCoffee] = (state.votes.coffee[selectedCoffee] || 0) + 1;
-            state.votes.mood[selectedMood] = (state.votes.mood[selectedMood] || 0) + 1;
-
             const questionText = document.getElementById('questionInput').value.trim();
             const authorText = document.getElementById('authorName').value.trim() || 'Anônimo';
 
-            if (questionText) {
-                const now = new Date();
-                const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-                state.questions.unshift({
+            try {
+                await postEvent({
+                    coffee: selectedCoffee,
+                    mood: selectedMood,
                     author: authorText,
-                    text: questionText,
-                    time: timeStr
+                    question: questionText
                 });
-                document.getElementById('questionInput').value = '';
+            } catch (e) {
+                alert('Não foi possível enviar sua participação. Verifique sua internet e tente novamente.');
+                return;
             }
 
-            saveState(state);
+            document.getElementById('questionInput').value = '';
 
             // Efeito de Confete
             if (typeof confetti === 'function') {
@@ -472,7 +464,7 @@
         }
 
         // Simulação de voto ao vivo (Perfeito para o apresentador demonstrar sem esperar ninguém)
-        function simulateAudienceVote() {
+        async function simulateAudienceVote() {
             const coffees = ['espresso', 'coado', 'cappuccino', 'cha'];
             const moods = ['power_user', 'curious', 'skeptic'];
             const sampleQuestions = [
@@ -484,23 +476,23 @@
 
             const randCoffee = coffees[Math.floor(Math.random() * coffees.length)];
             const randMood = moods[Math.floor(Math.random() * moods.length)];
-            const randQuestion = sampleQuestions[Math.floor(Math.random() * sampleQuestions.length)];
+            const randQuestion = Math.random() > 0.4
+                ? sampleQuestions[Math.floor(Math.random() * sampleQuestions.length)]
+                : '';
 
-            const state = getState();
-            state.votes.coffee[randCoffee]++;
-            state.votes.mood[randMood]++;
-
-            if (Math.random() > 0.4) {
-                const now = new Date();
-                const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-                state.questions.unshift({
-                    author: `Colega ao vivo #${Math.floor(Math.random()*90 + 10)}`,
-                    text: randQuestion,
-                    time: timeStr
+            try {
+                await postEvent({
+                    coffee: randCoffee,
+                    mood: randMood,
+                    author: `Colega ao vivo #${Math.floor(Math.random() * 90 + 10)}`,
+                    question: randQuestion
                 });
+            } catch (e) {
+                console.error(e);
+                return;
             }
 
-            saveState(state);
+            renderPresenter();
 
             if (typeof confetti === 'function') {
                 confetti({
@@ -525,6 +517,11 @@
                 tabPart.classList.remove('text-gray-600');
                 tabPres.classList.remove('bg-white', 'shadow-sm', 'text-gray-900', 'font-semibold');
                 tabPres.classList.add('text-gray-600');
+
+                if (presenterPollTimer) {
+                    clearInterval(presenterPollTimer);
+                    presenterPollTimer = null;
+                }
             } else {
                 partEl.classList.add('hidden');
                 presEl.classList.remove('hidden');
@@ -532,13 +529,24 @@
                 tabPres.classList.remove('text-gray-600');
                 tabPart.classList.remove('bg-white', 'shadow-sm', 'text-gray-900', 'font-semibold');
                 tabPart.classList.add('text-gray-600');
+
                 renderPresenter();
+                if (!presenterPollTimer) {
+                    presenterPollTimer = setInterval(renderPresenter, 4000);
+                }
             }
         }
 
         // Renderiza Painel do Telão
-        function renderPresenter() {
-            const state = getState();
+        async function renderPresenter() {
+            let state;
+            try {
+                state = await fetchState();
+            } catch (e) {
+                console.error(e);
+                return;
+            }
+
             const coffee = state.votes.coffee;
             const mood = state.votes.mood;
 
@@ -590,19 +598,30 @@
                 container.innerHTML = state.questions.map(q => `
                     <div class="bg-amber-50/40 p-4 rounded-xl border border-orange-100 space-y-1.5 hover:shadow-sm transition">
                         <div class="flex justify-between items-center text-xs">
-                            <span class="font-bold text-amber-900">${q.author}</span>
-                            <span class="text-gray-400">${q.time}</span>
+                            <span class="font-bold text-amber-900">${escapeHtml(q.author)}</span>
+                            <span class="text-gray-400">${escapeHtml(q.time)}</span>
                         </div>
-                        <p class="text-sm text-gray-800 font-medium">"${q.text}"</p>
+                        <p class="text-sm text-gray-800 font-medium">"${escapeHtml(q.text)}"</p>
                     </div>
                 `).join('');
             }
         }
 
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = String(str ?? '');
+            return div.innerHTML;
+        }
+
         // Limpar Dados
-        function clearAllData() {
+        async function clearAllData() {
             if (confirm('Deseja zerar as perguntas e votos para reiniciar a demonstração?')) {
-                localStorage.removeItem('cafe_ia_state');
+                try {
+                    await postEvent({ action: 'clear' });
+                } catch (e) {
+                    alert('Não foi possível limpar os dados. Verifique sua internet.');
+                    return;
+                }
                 renderPresenter();
             }
         }
@@ -634,7 +653,6 @@
         // Inicialização
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            renderPresenter();
         });
     </script>
 </body>
