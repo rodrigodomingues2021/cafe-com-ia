@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Café com IA ☕ | Experiência Interativa</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        coffee: {
+                            50: '#fdf8f6',
+                            100: '#f2e8e5',
+                            200: '#eaddd7',
+                            300: '#e0a96d',
+                            500: '#7c3f1d',
+                            700: '#4a2511',
+                            900: '#201007',
+                        },
+                        sami: {
+                            500: '#00A86B',
+                            600: '#008f5a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        @keyframes pulse-subtle {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+        .pulse-card {
+            animation: pulse-subtle 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-amber-50 via-orange-50/40 to-emerald-50/30 text-gray-800 min-h-screen font-sans antialiased flex flex-col">
+
+    <!-- Navbar Superior -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-40 px-4 sm:px-8 py-3.5 shadow-sm">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-amber-600/20">
+                    <span class="text-xl">☕</span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-bold text-gray-900 text-lg leading-tight">Café com IA</h1>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 animate-pulse">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Ao Vivo
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-500 font-medium">Desenvolvido com Antigravity + GitHub Pages</p>
+                </div>
+            </div>
+
+            <!-- Alternador de Visão (Participante vs Dashboard Telão) -->
+            <div class="flex items-center space-x-2 bg-gray-100/80 p-1 rounded-xl border border-gray-200 text-xs sm:text-sm font-medium">
+                <button id="tabParticipant" onclick="switchView('participant')" class="px-3 py-1.5 rounded-lg bg-white shadow-sm text-gray-900 font-semibold transition-all">
+                    📱 Participante
+                </button>
+                <button id="tabPresenter" onclick="switchView('presenter')" class="px-3 py-1.5 rounded-lg text-gray-600 hover:text-gray-900 transition-all">
+                    📊 Telão / Apresentador
+                </button>
+            </div>
+
+            <!-- Botão do QR Code -->
+            <button onclick="openQrModal()" class="hidden sm:inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow transition shadow-amber-800/10">
+                <i data-lucide="qr-code" class="w-4 h-4"></i>
+                <span>Projetar QR Code</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="flex-grow max-w-5xl mx-auto w-full p-4 sm:p-6 lg:p-8">
+
+        <!-- ================= MODO PARTICIPANTE ================= -->
+        <div id="viewParticipant" class="space-y-6">
+            
+            <!-- Hero / Boas-vindas -->
+            <div class="bg-gradient-to-r from-amber-800 via-amber-700 to-orange-700 text-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-amber-900/10 relative overflow-hidden">
+                <div class="relative z-10 max-w-2xl">
+                    <span class="bg-white/20 text-white text-xs uppercase tracking-wider font-bold px-3 py-1 rounded-full inline-block mb-3">
+                        Edição Especial • Live Demo
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Bem-vindo ao Café com IA! 🚀</h2>
+                    <p class="mt-2 text-amber-100 text-sm sm:text-base leading-relaxed">
+                        Participe em tempo real. Vote no seu café, avalie seu momento com IA e envie dúvidas que serão exibidas diretamente no telão!
+                    </p>
+                </div>
+                <div class="absolute -right-6 -bottom-8 opacity-15 text-9xl select-none pointer-events-none">☕</div>
+            </div>
+
+            <!-- Card 1: Escolha seu Café -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-orange-100/80">
+                <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
+                    <span>1. Qual é o seu combustível de hoje?</span>
+                </h3>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="coffeeOptions">
+                    <button type="button" onclick="selectCoffee('espresso')" class="coffee-card border-2 border-gray-100 hover:border-amber-500 rounded-xl p-4 text-center transition-all hover:shadow-md bg-amber-50/30 group">
+                        <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">☕</div>
+                        <div class="font-bold text-gray-800 text-sm">Espresso</div>
+                        <div class="text-xs text-gray-500">Direto e intenso</div>
+                    </button>
+                    <button type="button" onclick="selectCoffee('coado')" class="coffee-card border-2 border-gray-100 hover:border-amber-500 rounded-xl p-4 text-center transition-all hover:shadow-md bg-amber-50/30 group">
+                        <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">☕️</div>
+                        <div class="font-bold text-gray-800 text-sm">Coado Clássico</div>
+                        <div class="text-xs text-gray-500">Para apreciar calmo</div>
+                    </button>
+                    <button type="button" onclick="selectCoffee('cappuccino')" class="coffee-card border-2 border-gray-100 hover:border-amber-500 rounded-xl p-4 text-center transition-all hover:shadow-md bg-amber-50/30 group">
+                        <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">🧋</div>
+                        <div class="font-bold text-gray-800 text-sm">Cappuccino</div>
+                        <div class="text-xs text-gray-500">Com canela e espuma</div>
+                    </button>
+                    <button type="button" onclick="selectCoffee('cha')" class="coffee-card border-2 border-gray-100 hover:border-amber-500 rounded-xl p-4 text-center transition-all hover:shadow-md bg-amber-50/30 group">
+                        <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">🍵</div>
+                        <div class="font-bold text-gray-800 text-sm">Chá / Água</div>
+                        <div class="text-xs text-gray-500">Zen e focado</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 2: Termômetro com IA -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-orange-100/80">
+                <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
+                    <span>2. Qual frase melhor define você e a Inteligência Artificial hoje?</span>
+                </h3>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="aiMoodOptions">
+                    <button type="button" onclick="selectMood('power_user')" class="mood-card border-2 border-gray-100 hover:border-emerald-500 rounded-xl p-4 text-left transition-all hover:shadow-md bg-emerald-50/20 group">
+                        <div class="text-2xl mb-2">🚀</div>
+                        <div class="font-bold text-gray-900 text-sm">Já é meu copiloto</div>
+                        <div class="text-xs text-gray-600 mt-1">Uso quase todo dia para acelerar tarefas e ideias.</div>
+                    </button>
+                    <button type="button" onclick="selectMood('curious')" class="mood-card border-2 border-gray-100 hover:border-amber-500 rounded-xl p-4 text-left transition-all hover:shadow-md bg-amber-50/20 group">
+                        <div class="text-2xl mb-2">🤔</div>
+                        <div class="font-bold text-gray-900 text-sm">Curioso & Testando</div>
+                        <div class="text-xs text-gray-600 mt-1">Sei que tem potencial, mas ainda descobrindo casos práticos.</div>
+                    </button>
+                    <button type="button" onclick="selectMood('skeptic')" class="mood-card border-2 border-gray-100 hover:border-purple-500 rounded-xl p-4 text-left transition-all hover:shadow-md bg-purple-50/20 group">
+                        <div class="text-2xl mb-2">🧐</div>
+                        <div class="font-bold text-gray-900 text-sm">Cauteloso / Observador</div>
+                        <div class="text-xs text-gray-600 mt-1">Quero ver resultados confiáveis antes de adotar.</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 3: Enviar Pergunta ao Vivo -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-orange-100/80">
+                <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2 mb-2">
+                    <span>3. Envie uma pergunta ou ideia para o apresentador:</span>
+                </h3>
+                <p class="text-xs text-gray-500 mb-4">Sua pergunta vai direto para o painel principal da apresentação.</p>
+
+                <div class="space-y-3">
+                    <div class="flex gap-2">
+                        <input type="text" id="authorName" placeholder="Seu nome ou departamento (opcional)" class="w-full text-sm px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-600/30 focus:border-amber-600">
+                    </div>
+                    <textarea id="questionInput" rows="2" placeholder="Ex: Como o Antigravity difere de outras IAs de código? ou Como usar no meu setor?" class="w-full text-sm px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-600/30 focus:border-amber-600"></textarea>
+                    
+                    <button onclick="submitCheckin()" class="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-amber-600/25 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2">
+                        <span>Enviar Minha Participação 🎉</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Notificação de Sucesso -->
+            <div id="voteSuccessBanner" class="hidden p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-2 animate-fade-in">
+                <div class="text-3xl">✨</div>
+                <h4 class="font-bold text-emerald-900 text-base">Registrado com sucesso!</h4>
+                <p class="text-xs text-emerald-700">Seu voto e contribuição já estão computados no telão da apresentação.</p>
+                <button onclick="switchView('presenter')" class="mt-2 text-xs font-bold text-emerald-800 underline">
+                    Ver resultado no Telão 📊
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= MODO APRESENTADOR / TELÃO ================= -->
+        <div id="viewPresenter" class="hidden space-y-6">
+            
+            <!-- Barra Superior do Apresentador -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-orange-100 shadow-sm">
+                <div>
+                    <h2 class="text-xl font-black text-gray-900 flex items-center gap-2">
+                        <span>📊 Dashboard da Sala em Tempo Real</span>
+                    </h2>
+                    <p class="text-xs text-gray-500">Resultados consolidados dos participantes deste encontro.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="simulateAudienceVote()" title="Adiciona 1 voto simulado para demonstrar ao vivo" class="text-xs font-semibold px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-xl border border-amber-200 transition-all flex items-center gap-1.5">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                        <span>+ Simular Voto Demo</span>
+                    </button>
+                    <button onclick="openQrModal()" class="text-xs font-bold px-3 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl shadow transition-all flex items-center gap-1.5">
+                        <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+                        <span>QR Code Telão</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Métricas Resumo -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
+                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total de Votos</span>
+                    <div id="metricTotalVotes" class="text-3xl font-extrabold text-gray-900 mt-1">0</div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
+                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Café Favorito</span>
+                    <div id="metricTopCoffee" class="text-xl font-extrabold text-amber-700 mt-2 truncate">-</div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
+                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Afinidade com IA</span>
+                    <div id="metricAiAdoption" class="text-3xl font-extrabold text-emerald-600 mt-1">0%</div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
+                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Perguntas no Mural</span>
+                    <div id="metricTotalQuestions" class="text-3xl font-extrabold text-indigo-600 mt-1">0</div>
+                </div>
+            </div>
+
+            <!-- Gráficos Visuais -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Gráfico de Cafés -->
+                <div class="bg-white p-6 rounded-2xl border border-orange-100 shadow-sm space-y-4">
+                    <h3 class="font-bold text-gray-900 text-sm flex items-center justify-between">
+                        <span>☕ Distribuição do Café na Sala</span>
+                        <span class="text-xs text-gray-400 font-normal">Preferências</span>
+                    </h3>
+                    
+                    <div class="space-y-3" id="coffeeBars">
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span>☕ Espresso</span>
+                                <span id="countEspresso" class="font-bold text-gray-700">0% (0)</span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                                <div id="barEspresso" class="bg-amber-800 h-full rounded-full transition-all duration-700" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span>☕️ Coado Clássico</span>
+                                <span id="countCoado" class="font-bold text-gray-700">0% (0)</span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                                <div id="barCoado" class="bg-amber-600 h-full rounded-full transition-all duration-700" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span>🧋 Cappuccino</span>
+                                <span id="countCappuccino" class="font-bold text-gray-700">0% (0)</span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                                <div id="barCappuccino" class="bg-amber-400 h-full rounded-full transition-all duration-700" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span>🍵 Chá / Água</span>
+                                <span id="countCha" class="font-bold text-gray-700">0% (0)</span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                                <div id="barCha" class="bg-emerald-500 h-full rounded-full transition-all duration-700" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfico de Relação com IA -->
+                <div class="bg-white p-6 rounded-2xl border border-orange-100 shadow-sm space-y-4">
+                    <h3 class="font-bold text-gray-900 text-sm flex items-center justify-between">
+                        <span>🤖 Sentimento da Sala sobre IA</span>
+                        <span class="text-xs text-gray-400 font-normal">Adoção</span>
+                    </h3>
+
+                    <div class="space-y-3" id="aiBars">
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span>🚀 Copiloto Diário</span>
+                                <span id="countPowerUser" class="font-bold text-emerald-700">0% (0)</span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                                <div id="barPowerUser" class="bg-emerald-500 h-full rounded-full transition-all duration-700" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span>🤔 Curioso & Explorando</span>
+                                <span id="countCurious" class="font-bold text-amber-700">0% (0)</span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                                <div id="barCurious" class="bg-amber-500 h-full rounded-full transition-all duration-700" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span>🧐 Cauteloso / Observador</span>
+                                <span id="countSkeptic" class="font-bold text-purple-700">0% (0)</span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                                <div id="barSkeptic" class="bg-purple-500 h-full rounded-full transition-all duration-700" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mural de Perguntas / Insights -->
+            <div class="bg-white p-6 rounded-2xl border border-orange-100 shadow-sm space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-bold text-gray-900 text-base flex items-center gap-2">
+                        <span>💬 Perguntas e Insights dos Colegas</span>
+                    </h3>
+                    <button onclick="clearAllData()" class="text-xs text-red-500 hover:text-red-700 font-medium">
+                        Limpar Respostas
+                    </button>
+                </div>
+                
+                <div id="questionsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <!-- Cards de perguntas inseridos dinamicamente -->
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- MODAL DE QR CODE (PARA O TELÃO) -->
+    <div id="qrModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center space-y-4 shadow-2xl relative">
+            <button onclick="closeQrModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl font-bold">✕</button>
+            
+            <div class="w-12 h-12 bg-amber-100 rounded-2xl mx-auto flex items-center justify-center text-amber-800 text-2xl">
+                📱
+            </div>
+            
+            <h3 class="text-xl font-black text-gray-900">Acesse no seu celular!</h3>
+            <p class="text-xs text-gray-500">Aponte a câmera para votar e enviar sua pergunta em tempo real:</p>
+
+            <!-- Contêiner do QR Code -->
+            <div class="p-3 bg-amber-50/60 rounded-2xl inline-block border border-orange-100">
+                <div id="qrcode" class="flex justify-center"></div>
+            </div>
+
+            <!-- URL Customizável / Exibida -->
+            <div class="space-y-1">
+                <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Endereço da Página:</label>
+                <input type="text" id="qrUrlInput" class="w-full text-center text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg p-2 text-gray-700" readonly>
+            </div>
+
+            <button onclick="closeQrModal()" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-2.5 rounded-xl text-sm transition">
+                Fechar
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white/60 border-t border-orange-100/60 py-4 px-6 text-center text-xs text-gray-500 mt-auto">
+        Criado ao vivo durante o <strong>Café com IA</strong> usando <span class="font-semibold text-amber-800">Antigravity</span> no VS Code & hospedado no <span class="font-semibold text-gray-800">GitHub Pages</span>.
+    </footer>
+
+    <!-- LÓGICA JAVASCRIPT -->
+    <script>
+        // Dados de Estado
+        let selectedCoffee = null;
+        let selectedMood = null;
+
+        const defaultState = {
+            votes: {
+                coffee: { espresso: 6, coado: 9, cappuccino: 7, cha: 2 },
+                mood: { power_user: 8, curious: 11, skeptic: 3 }
+            },
+            questions: [
+                { author: "Marina (Produto)", text: "Qual a melhor forma de começar a usar IA no dia a dia para quem não é dev?", time: "09:12" },
+                { author: "Carlos (Tech)", text: "O Antigravity consegue rodar testes unitários e refatorar funções sozinho?", time: "09:15" },
+                { author: "Anônimo", text: "Como lidar com segurança de dados corporativos ao usar agentes de IA?", time: "09:18" }
+            ]
+        };
+
+        // Carrega estado ou inicializa padrão
+        function getState() {
+            const saved = localStorage.getItem('cafe_ia_state');
+            if (saved) {
+                try { return JSON.parse(saved); } catch(e){}
+            }
+            return defaultState;
+        }
+
+        function saveState(state) {
+            localStorage.setItem('cafe_ia_state', JSON.stringify(state));
+            renderPresenter();
+        }
+
+        // Seleção de Café
+        function selectCoffee(type) {
+            selectedCoffee = type;
+            document.querySelectorAll('.coffee-card').forEach(c => {
+                c.classList.remove('border-amber-600', 'bg-amber-100/80', 'ring-2', 'ring-amber-500');
+            });
+            event.currentTarget.classList.add('border-amber-600', 'bg-amber-100/80', 'ring-2', 'ring-amber-500');
+        }
+
+        // Seleção de Humor IA
+        function selectMood(type) {
+            selectedMood = type;
+            document.querySelectorAll('.mood-card').forEach(m => {
+                m.classList.remove('border-emerald-600', 'bg-emerald-100/80', 'ring-2', 'ring-emerald-500');
+            });
+            event.currentTarget.classList.add('border-emerald-600', 'bg-emerald-100/80', 'ring-2', 'ring-emerald-500');
+        }
+
+        // Submissão do Participante
+        function submitCheckin() {
+            if (!selectedCoffee) {
+                alert('Por favor, selecione qual café você está tomando!');
+                return;
+            }
+            if (!selectedMood) {
+                alert('Por favor, escolha sua frase sobre IA!');
+                return;
+            }
+
+            const state = getState();
+            state.votes.coffee[selectedCoffee] = (state.votes.coffee[selectedCoffee] || 0) + 1;
+            state.votes.mood[selectedMood] = (state.votes.mood[selectedMood] || 0) + 1;
+
+            const questionText = document.getElementById('questionInput').value.trim();
+            const authorText = document.getElementById('authorName').value.trim() || 'Anônimo';
+
+            if (questionText) {
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+                state.questions.unshift({
+                    author: authorText,
+                    text: questionText,
+                    time: timeStr
+                });
+                document.getElementById('questionInput').value = '';
+            }
+
+            saveState(state);
+
+            // Efeito de Confete
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 80,
+                    spread: 60,
+                    origin: { y: 0.7 }
+                });
+            }
+
+            document.getElementById('voteSuccessBanner').classList.remove('hidden');
+        }
+
+        // Simulação de voto ao vivo (Perfeito para o apresentador demonstrar sem esperar ninguém)
+        function simulateAudienceVote() {
+            const coffees = ['espresso', 'coado', 'cappuccino', 'cha'];
+            const moods = ['power_user', 'curious', 'skeptic'];
+            const sampleQuestions = [
+                "Fantástica essa velocidade de criação!",
+                "Qual modelo de IA está rodando por baixo?",
+                "Dá para conectar isso com o banco da empresa?",
+                "Como funciona o autocomplete preditivo do Antigravity?"
+            ];
+
+            const randCoffee = coffees[Math.floor(Math.random() * coffees.length)];
+            const randMood = moods[Math.floor(Math.random() * moods.length)];
+            const randQuestion = sampleQuestions[Math.floor(Math.random() * sampleQuestions.length)];
+
+            const state = getState();
+            state.votes.coffee[randCoffee]++;
+            state.votes.mood[randMood]++;
+
+            if (Math.random() > 0.4) {
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+                state.questions.unshift({
+                    author: `Colega ao vivo #${Math.floor(Math.random()*90 + 10)}`,
+                    text: randQuestion,
+                    time: timeStr
+                });
+            }
+
+            saveState(state);
+
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 40,
+                    spread: 45,
+                    origin: { y: 0.4 }
+                });
+            }
+        }
+
+        // Alternador de Visões
+        function switchView(view) {
+            const partEl = document.getElementById('viewParticipant');
+            const presEl = document.getElementById('viewPresenter');
+            const tabPart = document.getElementById('tabParticipant');
+            const tabPres = document.getElementById('tabPresenter');
+
+            if (view === 'participant') {
+                partEl.classList.remove('hidden');
+                presEl.classList.add('hidden');
+                tabPart.classList.add('bg-white', 'shadow-sm', 'text-gray-900', 'font-semibold');
+                tabPart.classList.remove('text-gray-600');
+                tabPres.classList.remove('bg-white', 'shadow-sm', 'text-gray-900', 'font-semibold');
+                tabPres.classList.add('text-gray-600');
+            } else {
+                partEl.classList.add('hidden');
+                presEl.classList.remove('hidden');
+                tabPres.classList.add('bg-white', 'shadow-sm', 'text-gray-900', 'font-semibold');
+                tabPres.classList.remove('text-gray-600');
+                tabPart.classList.remove('bg-white', 'shadow-sm', 'text-gray-900', 'font-semibold');
+                tabPart.classList.add('text-gray-600');
+                renderPresenter();
+            }
+        }
+
+        // Renderiza Painel do Telão
+        function renderPresenter() {
+            const state = getState();
+            const coffee = state.votes.coffee;
+            const mood = state.votes.mood;
+
+            const totalCoffee = coffee.espresso + coffee.coado + coffee.cappuccino + coffee.cha;
+            const totalMood = mood.power_user + mood.curious + mood.skeptic;
+            const totalVotes = Math.max(totalCoffee, totalMood);
+
+            document.getElementById('metricTotalVotes').innerText = totalVotes;
+            document.getElementById('metricTotalQuestions').innerText = state.questions.length;
+
+            // Café Favorito
+            const coffeeNames = { espresso: 'Espresso ☕', coado: 'Coado ☕️', cappuccino: 'Cappuccino 🧋', cha: 'Chá 🍵' };
+            let topCoffeeKey = 'coado';
+            let maxCount = -1;
+            for (const [key, val] of Object.entries(coffee)) {
+                if (val > maxCount) {
+                    maxCount = val;
+                    topCoffeeKey = key;
+                }
+            }
+            document.getElementById('metricTopCoffee').innerText = coffeeNames[topCoffeeKey];
+
+            // Porcentagem Copiloto
+            const adoptionPct = totalMood > 0 ? Math.round((mood.power_user / totalMood) * 100) : 0;
+            document.getElementById('metricAiAdoption').innerText = `${adoptionPct}%`;
+
+            // Barras de Café
+            function updateBar(barId, countId, count, total) {
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                document.getElementById(barId).style.width = `${pct}%`;
+                document.getElementById(countId).innerText = `${pct}% (${count})`;
+            }
+
+            updateBar('barEspresso', 'countEspresso', coffee.espresso, totalCoffee);
+            updateBar('barCoado', 'countCoado', coffee.coado, totalCoffee);
+            updateBar('barCappuccino', 'countCappuccino', coffee.cappuccino, totalCoffee);
+            updateBar('barCha', 'countCha', coffee.cha, totalCoffee);
+
+            // Barras de IA
+            updateBar('barPowerUser', 'countPowerUser', mood.power_user, totalMood);
+            updateBar('barCurious', 'countCurious', mood.curious, totalMood);
+            updateBar('barSkeptic', 'countSkeptic', mood.skeptic, totalMood);
+
+            // Mural de Perguntas
+            const container = document.getElementById('questionsContainer');
+            if (state.questions.length === 0) {
+                container.innerHTML = `<div class="col-span-2 text-center text-gray-400 py-6 text-sm">Nenhuma pergunta enviada ainda. As perguntas enviadas pela plateia surgirão aqui!</div>`;
+            } else {
+                container.innerHTML = state.questions.map(q => `
+                    <div class="bg-amber-50/40 p-4 rounded-xl border border-orange-100 space-y-1.5 hover:shadow-sm transition">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-amber-900">${q.author}</span>
+                            <span class="text-gray-400">${q.time}</span>
+                        </div>
+                        <p class="text-sm text-gray-800 font-medium">"${q.text}"</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Limpar Dados
+        function clearAllData() {
+            if (confirm('Deseja zerar as perguntas e votos para reiniciar a demonstração?')) {
+                localStorage.removeItem('cafe_ia_state');
+                renderPresenter();
+            }
+        }
+
+        // QR Code Modal
+        function openQrModal() {
+            const modal = document.getElementById('qrModal');
+            modal.classList.remove('hidden');
+
+            const currentUrl = window.location.href.split('#')[0];
+            document.getElementById('qrUrlInput').value = currentUrl;
+
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            new QRCode(qrContainer, {
+                text: currentUrl,
+                width: 180,
+                height: 180,
+                colorDark : "#201007",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
+
+        function closeQrModal() {
+            document.getElementById('qrModal').classList.add('hidden');
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderPresenter();
+        });
+    </script>
+</body>
+</html>
+
